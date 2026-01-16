@@ -9,9 +9,12 @@ app.use(express.static("public"));
 
 initWebSocket(server);
 
-server.listen(3000, () => {
-    console.log("🚀 Chat server running at http://localhost:3000");
+const PORT = process.env.PORT || 3300;
+
+server.listen(PORT, () => {
+    console.log("Signaling server running on", PORT);
 });
+
 
 app.get("/users", (req, res) => {
     const allUsers = getAllConnectedUsers();
