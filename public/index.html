@@ -146,7 +146,8 @@ function connect() {
 
     myUserId = inputUserId; // set your userId
     const protocol = location.protocol === "https:" ? "wss" : "ws";
-    ws = new WebSocket(`${protocol}://localhost:3000?userId=${myUserId}`);
+    ws = new WebSocket(`${protocol}://${location.host}?userId=${myId}`);
+
 
 
     ws.onopen = () => {
