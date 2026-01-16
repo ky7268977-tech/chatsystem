@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>1-to-1 Chat</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #ece5dd;
+      display: flex;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .chat-container {
+      width: 380px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .header {
+      background: #075e54;
+      color: white;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .connect {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .connect input {
+      width: 65%;
+      padding: 6px;
+    }
+
+    .connect button {
+      padding: 6px 10px;
+    }
+
+    #chat {
+      list-style: none;
+      padding: 10px;
+      margin: 0;
+      flex: 1;
+      overflow-y: auto;
+      background: #e5ddd5;
+    }
+
+    .msg {
+      max-width: 70%;
+      margin-bottom: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      clear: both;
+    }
+
+    .me {
+      background: #dcf8c6;
+      float: right;
+      text-align: right;
+    }
+
+    .other {
+      background: #fff;
+      float: left;
+    }
+
+    .send-box {
+      display: flex;
+      padding: 8px;
+      border-top: 1px solid #ddd;
+    }
+
+    .send-box input {
+      flex: 1;
+      padding: 8px;
+      margin-right: 5px;
+    }
+
+    .send-box button {
+      padding: 8px 12px;
+    }
+
+    .to-user {
+      padding: 8px;
+      border-top: 1px solid #ddd;
+    }
+
+    .to-user input {
+      width: 100%;
+      padding: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-container">
+
+  <div class="header">1-to-1 Chat</div>
+
+  <!-- CONNECT -->
+  <div class="connect">
+    <input id="userId" placeholder="Your userId">
+    <button onclick="connect()">Connect</button>
+  </div>
+
+  <!-- CHAT HISTORY -->
+  <ul id="chat"></ul>
+
+  <!-- SEND TO -->
+  <div class="to-user">
+    <input id="toUserId" placeholder="Send to userId">
+  </div>
+
+  <!-- SEND BOX -->
+  <div class="send-box">
+    <input id="msg" placeholder="Type message...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+</div>
+
+<script>
+let ws;
+let myUserId = "";
+let isConnected = false;
+
+function connect() {
+    const inputUserId = document.getElementById("userId").value.trim();
+    if (!inputUserId) return alert("Enter userId");
+
+    if (isConnected) {
+        alert("Already connected!");
+        return;
+    }
+
+    ws = new WebSocket(`ws://192.168.1.58:3000?userId=${inputUserId}`);
+
+    ws.onopen = () => {
+        console.log("Connected");
+        myUserId = inputUserId;
+        isConnected = true;
+    };
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.error) {
+            alert(data.error); // duplicate connection alert
+            ws.close();
+            return;
+        }
+
+        addMessage(data.from, data.message);
+    };
+
+    ws.onclose = () => {
+        console.log("Disconnected");
+        isConnected = false;
+    };
+}
+
+function sendMessage() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        return alert("Connect first");
+    }
+
+    const to = document.getElementById("toUserId").value.trim();
+    const msg = document.getElementById("msg").value.trim();
+    if (!to || !msg) return;
+
+    ws.send(JSON.stringify({
+        from: myUserId,
+        to,
+        message: msg
+    }));
+
+    addMessage(myUserId, msg);
+    document.getElementById("msg").value = "";
+}
+
+
+  function addMessage(sender, text) {
+    const li = document.createElement("li");
+    li.className = "msg " + (sender === myUserId ? "me" : "other");
+    li.textContent = sender + ": " + text;
+
+    const chat = document.getElementById("chat");
+    chat.appendChild(li);
+    chat.scrollTop = chat.scrollHeight; // auto scroll
+  }
+</script>
+
+</body>
+</html>
